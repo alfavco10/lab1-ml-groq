@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI & ML Labs • ISOF CLASS: Carga de Datos CSV + Groq API</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0d14;
+            --card-bg: #141724;
+            --card-border: #23283b;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            
+            /* Primary Gradient: Violet to Indigo to Blue */
+            --gradient-primary: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #3b82f6 100%);
+            --gradient-btn-hover: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #2563eb 100%);
+            
+            /* High Contrast Accents */
+            --accent-purple: #c084fc;
+            --accent-purple-bg: rgba(192, 132, 252, 0.18);
+            --accent-purple-border: rgba(192, 132, 252, 0.45);
+            
+            --accent-indigo: #818cf8;
+            --accent-blue: #60a5fa;
+            --accent-green: #34d399;
+            --accent-amber: #fbbf24;
+            
+            --code-bg: #090b10;
+            --header-bg: #10121d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-bottom: 60px;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--card-border);
+            padding: 14px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-badge {
+            background: var(--gradient-primary);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 0.85rem;
+            padding: 6px 16px;
+            border-radius: 20px;
+            letter-spacing: 0.8px;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+            text-transform: uppercase;
+        }
+
+        .brand-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .control-btn {
+            background: var(--gradient-primary);
+            color: #ffffff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.88rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+        }
+
+        .control-btn:hover {
+            background: var(--gradient-btn-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(99, 102, 241, 0.45);
+        }
+
+        /* Layout Container */
+        .layout-container {
+            max-width: 980px;
+            margin: 32px auto;
+            padding: 0 20px;
+        }
+
+        /* Header Card */
+        .lab-header-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 34px;
+            margin-bottom: 28px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lab-header-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+
+        .lab-badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .lab-badge {
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 6px 16px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-hands-on {
+            background: var(--accent-purple-bg);
+            color: var(--accent-purple);
+            border: 1px solid var(--accent-purple-border);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+
+        .badge-duration {
+            background: rgba(52, 211, 153, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(52, 211, 153, 0.35);
+        }
+
+        .badge-docente {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--accent-amber);
+            border: 1px solid rgba(251, 191, 36, 0.35);
+        }
+
+        .lab-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 14px;
+            line-height: 1.3;
+        }
+
+        .lab-description {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        /* Step Card */
+        .step-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 26px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .step-number {
+            background: var(--gradient-primary);
+            color: #ffffff;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+        }
+
+        .step-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        p {
+            margin-bottom: 14px;
+            color: var(--text-main);
+        }
+
+        ul, ol {
+            margin-left: 24px;
+            margin-bottom: 18px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .concepts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin: 18px 0;
+        }
+
+        .concept-box {
+            background: #0f121d;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .concept-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--accent-purple);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .concept-desc {
+            font-size: 0.92rem;
+            color: var(--text-muted);
+            margin-bottom: 0;
+        }
+
+        .callout {
+            border-left: 4px solid var(--accent-indigo);
+            background: rgba(99, 102, 241, 0.08);
+            padding: 18px 22px;
+            border-radius: 0 10px 10px 0;
+            margin: 20px 0;
+        }
+
+        .callout-success {
+            border-left-color: var(--accent-green);
+            background: rgba(52, 211, 153, 0.08);
+        }
+
+        .callout-warning {
+            border-left-color: var(--accent-amber);
+            background: rgba(251, 191, 36, 0.08);
+        }
+
+        .code-container {
+            background: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .code-header {
+            background: #0e1017;
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-family: 'Fira Code', monospace;
+        }
+
+        .copy-btn {
+            background: var(--gradient-primary);
+            color: #ffffff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        }
+
+        .copy-btn:hover {
+            background: var(--gradient-btn-hover);
+            transform: scale(1.02);
+        }
+
+        pre {
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.88rem;
+            color: #e2e8f0;
+            line-height: 1.55;
+        }
+
+        code {
+            font-family: 'Fira Code', monospace;
+            background: rgba(255,255,255,0.08);
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            color: var(--accent-amber);
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        .quiz-item {
+            background: #0f121d;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 18px;
+        }
+
+        .quiz-question {
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 10px;
+            font-size: 1.05rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div class="brand-container">
+        <span class="brand-badge">ISOF CLASS</span>
+        <h1 class="brand-title">AI & ML Labs • Carga de Datos CSV + Groq API</h1>
+    </div>
+    <button class="control-btn" id="fullscreenBtn" onclick="toggleFullScreen()">
+        <span id="fullscreenIcon">⛶</span> <span id="fullscreenText">Pantalla Completa</span>
+    </button>
+</div>
+
+<div class="layout-container">
+
+    <div class="lab-header-card">
+        <div class="lab-badge-row">
+            <span class="lab-badge badge-hands-on">Dataset CSV + ML + Groq API</span>
+            <span class="lab-badge badge-duration">⏱️ Tiempo estimado: 60 min</span>
+            <span class="lab-badge badge-docente">Docente: Dra. Aiblis Susej Herrera Palafox</span>
+        </div>
+        <h1 class="lab-title">Laboratorio Práctico: Entrenamiento de Modelo Predictivo con Dataset (.CSV) y Asesoría Automatizada en Nube</h1>
+        <p class="lab-description">
+            En esta práctica aprenderás a cargar un conjunto de datos desde un archivo <code>.csv</code> usando <code>pandas</code>, entrenar un modelo de clasificación con <code>scikit-learn</code>, exportarlo en un archivo binario <code>.pkl</code> y conectarlo en <strong>VS Code (Localhost)</strong> con la <strong>API de Groq</strong> para su despliegue en <strong>Streamlit Community Cloud</strong>.
+        </p>
+    </div>
+
+    <div class="step-card">
+        <div class="step-header">
+            <div class="step-number">1</div>
+            <h2 class="step-title">Conceptos Clave de la Práctica</h2>
+        </div>
+        <p>Entender Machine Learning en este laboratorio es muy sencillo si lo dividimos en 3 elementos fundamentales:</p>
+
+        <div class="concepts-grid">
+            <div class="concept-box">
+                <div class="concept-title">🤖 1. Machine Learning</div>
+                <p class="concept-desc">En lugar de escribir reglas manuales con <code>if / else</code>, el algoritmo analiza una tabla de datos y aprende las reglas por sí solo.</p>
+            </div>
+            <div class="concept-box">
+                <div class="concept-title">📊 2. Entradas (X) vs Salida (y)</div>
+                <p class="concept-desc"><strong>Entradas (X):</strong> Asistencia, Promedio y Horas de estudio.<br><strong>Salida (y):</strong> Nivel de Riesgo (0 = Bajo, 1 = Alto).</p>
+            </div>
+            <div class="concept-box">
+                <div class="concept-title">💾 3. Modelo Guardado (.pkl)</div>
+                <p class="concept-desc">Es la "fotografía" del modelo entrenado. Se guarda en un archivo para que la App Web lo use al instante sin volver a entrenar.</p>
+            </div>
+        </div>
+
+        <div class="callout callout-success">
+            💡 <strong>El Flujo en 3 Pasos:</strong> Cargar el CSV con <code>pandas</code> &rarr; Entrenar y guardar el modelo <code>.pkl</code> &rarr; Usar el modelo en la App Web para evaluar al alumno y generar recomendaciones con Groq.
+        </div>
+    </div>
+
+    <div class="step-card">
+        <div class="step-header">
+            <div class="step-number">2</div>
+            <h2 class="step-title">Librerías de Python Utilizadas</h2>
+        </div>
+        <p>Para construir el proyecto integrador utilizaremos 5 librerías clave:</p>
+
+        <ul>
+            <li><code>pandas</code>: Lee la tabla de datos <code>alumnos.csv</code> y limpia filas incompletas con <code>dropna()</code>.</li>
+            <li><code>scikit-learn</code> (<code>sklearn</code>): Entrena el algoritmo de clasificación (<em>RandomForestClassifier</em>).</li>
+            <li><code>joblib</code>: Exporta e importa el modelo entrenado en formato comprimido <code>.pkl</code>.</li>
+            <li><code>groq</code>: Conecta con la API de Groq Cloud para generar los planes de tutoría con un modelo de lenguaje activo.</li>
+            <li><code>streamlit</code>: Crea la interfaz web interactiva que corre en <code>localhost</code>.</li>
+        </ul>
+    </div>
+
+    <div class="step-card">
+        <div class="step-header">
+            <div class="step-number">3</div>
+            <h2 class="step-title">Creación del Archivo de Datos (<code>alumnos.csv</code>)</h2>
+        </div>
+        <p>En la carpeta de tu proyecto en VS Code (ejemplo: <code>proyecto_ml_isof</code>), crea el archivo <code>alumnos.csv</code> con la siguiente estructura de datos (sin comillas alrededor de las filas):</p>
+
+        <div class="code-container">
+            <div class="code-header">
+                <span>alumnos.csv (Dataset de Entrenamiento)</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copiar Código</button>
+            </div>
+            <pre><code>asistencia,promedio,horas_estudio,riesgo
+85.5,8.2,12.0,0
+62.0,6.1,4.0,1
+90.0,9.5,15.0,0
+55.0,5.8,3.5,1
+78.0,7.4,8.0,0
+68.0,6.5,5.0,1
+92.0,8.8,14.0,0
+50.0,5.2,2.0,1
+88.0,8.0,10.0,0
+71.0,6.9,6.0,1
+95.0,9.8,18.0,0
+64.0,6.3,4.5,1
+82.0,7.9,11.0,0
+59.0,5.5,3.0,1
+89.0,8.4,13.0,0
+73.0,7.1,7.0,0
+66.0,6.0,4.0,1
+91.0,9.1,16.0,0
+58.0,5.9,2.5,1
+84.0,8.1,9.0,0</code></pre>
+        </div>
+
+        <div class="callout callout-warning">
+            📌 <strong>Nota de Estructura:</strong> La columna <code>riesgo</code> representa la etiqueta objetivo (1 = Alto Riesgo, 0 = Bajo Riesgo). Asegúrate de que las líneas no tengan comillas dobles al inicio ni al final.
+        </div>
+    </div>
+
+    <div class="step-card">
+        <div class="step-header">
+            <div class="step-number">4</div>
+            <h2 class="step-title">Script de Entrenamiento (<code>entrenar.py</code>)</h2>
+        </div>
+        <p>Crea el archivo <code>entrenar.py</code>. Este script lee el archivo <code>alumnos.csv</code> (incluyendo una validación automática en caso de que el archivo haya sido exportado con comillas), realiza la división de datos, entrena el algoritmo y exporta <code>modelo_riesgo.pkl</code>.</p>
+
+        <div class="code-container">
+            <div class="code-header">
+                <span>entrenar.py (Carga Segura de CSV y Entrenamiento de ML)</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copiar Código</button>
+            </div>
+            <pre><code># ==============================================================================
+# SCRIPT DE ENTRENAMIENTO DE MACHINE LEARNING CON LECTURA SEGURA DE CSV
+# Clase: ISOF CLASS | Docente: Dra. Aiblis Susej Herrera Palafox
+# ==============================================================================
+
+import pandas as pd
+import joblib
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+
+print("📂 1. Cargando conjunto de datos desde 'alumnos.csv'...")
+
+# 1. Leer el archivo CSV con pandas y validar formato de columnas
+try:
+    df = pd.read_csv('alumnos.csv', sep=',')
+    
+    # Si toda la fila quedó agrupada en una sola columna, dividirla automáticamente
+    if len(df.columns) == 1 and ',' in df.columns[0]:
+        col_unica = df.columns[0]
+        nuevas_cols = [c.strip().lower() for c in col_unica.split(',')]
+        df = df[col_unica].str.split(',', expand=True)
+        df.columns = nuevas_cols
+        df = df.apply(pd.to_numeric, errors='coerce')
+    else:
+        df.columns = df.columns.str.strip().str.lower()
+        
+    print(f"✅ Archivo cargado correctamente. Registros totales: {len(df)}")
+    print(f"📋 Columnas detectadas: {df.columns.tolist()}")
+except FileNotFoundError:
+    print("❌ Error: No se encontró el archivo 'alumnos.csv'. Revisa la ruta.")
+    exit()
+
+# 2. Limpieza básica: eliminar filas incompletas si existen
+df = df.dropna()
+
+# 3. Verificar que existan las columnas requeridas
+columnas_requeridas = ['asistencia', 'promedio', 'horas_estudio', 'riesgo']
+if not all(col in df.columns for col in columnas_requeridas):
+    print(f"❌ Error: Tu CSV debe tener las columnas: {columnas_requeridas}")
+    exit()
+
+# 4. Definición de Variables de Entrada (X) y Objetivo (y)
+X = df[['asistencia', 'promedio', 'horas_estudio']]
+y = df['riesgo']
+
+# 5. Dividir datos en entrenamiento (80%) y prueba (20%)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 6. Entrenar el Modelo de Clasificación (Random Forest)
+print("🧠 2. Entrenando el algoritmo RandomForestClassifier...")
+modelo = RandomForestClassifier(n_estimators=100, random_state=42)
+modelo.fit(X_train, y_train)
+
+# 7. Exportar el modelo entrenado a un archivo .pkl
+joblib.dump(modelo, 'modelo_riesgo.pkl')
+print("✅ 3. ¡Éxito! Modelo exportado como 'modelo_riesgo.pkl'.")
+</code></pre>
+        </div>
+
+        <p>Ejecuta el entrenamiento en la terminal de VS Code:</p>
+
+        <div class="code-container">
+            <div class="code-header">
+                <span>Terminal de VS Code</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copiar Código</button>
+            </div>
+            <pre><code>python entrenar.py</code></pre>
+        </div>
+
+        <div class="callout callout-success">
+            ✓ <strong>Resultado Esperado:</strong> Verás confirmada la creación del archivo <code>modelo_riesgo.pkl</code> en tu carpeta.
+        </div>
+    </div>
+
+    <div class="step-card">
+        <div class="step-header">
+            <div class="step-number">5</div>
+            <h2 class="step-title">Aplicación Web Interactiva (<code>app.py</code>)</h2>
+        </div>
+        <p>Crea el archivo <code>app.py</code> para conectar el modelo <code>.pkl</code> con la interfaz de Streamlit y la API de Groq, detectando automáticamente un modelo de chat vigente en tu cuenta.</p>
+
+        <div class="code-container">
+            <div class="code-header">
+                <span>app.py (Interfaz Web Streamlit + ML + Groq API)</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copiar Código</button>
+            </div>
+            <pre><code># ==============================================================================
+# APLICACIÓN WEB INTERACTIVA: MACHINE LEARNING + GROQ API
+# Clase: ISOF CLASS | Docente: Dra. Aiblis Susej Herrera Palafox
+# ==============================================================================
+
+import streamlit as st
+import pandas as pd
+import joblib
+from groq import Groq
+
+# --- 1. Configuración Inicial de la Página ---
+st.set_page_config(page_title="Sistema Predictivo de Riesgo", page_icon="⚡")
+
+# --- 2. Configuración de la API Key de Groq ---
+try:
+    api_key = st.secrets["GROQ_API_KEY"]
+except Exception:
+    api_key = "gsk_TU_API_KEY_LOCAL_AQUI"
+
+client = Groq(api_key=api_key)
+
+# --- 3. Cargar el Modelo de Machine Learning Entrenado ---
+@st.cache_resource
+def cargar_modelo_ml():
+    return joblib.load('modelo_riesgo.pkl')
+
+modelo = cargar_modelo_ml()
+
+# --- 4. Interfaz Gráfica en Streamlit ---
+st.title("⚡ Evaluador Predictivo de Riesgo Académico")
+st.write("Sistema híbrido: **Machine Learning (Scikit-Learn)** para cálculo de probabilidad + **Groq API** para tutoría personalizada.")
+
+# Sidebar de Entradas
+st.sidebar.header("Parámetros del Alumno")
+asistencia = st.sidebar.slider("Porcentaje de Asistencia (%)", 0, 100, 80)
+promedio = st.sidebar.number_input("Promedio General (0.0 - 10.0)", 0.0, 10.0, 7.5, step=0.1)
+horas_estudio = st.sidebar.slider("Horas de Estudio Semanales", 0, 30, 8)
+
+# --- 5. Procesamiento y Predicción ---
+if st.button("Evaluar Estudiante"):
+    datos_entrada = pd.DataFrame([{
+        'asistencia': asistencia,
+        'promedio': promedio,
+        'horas_estudio': horas_estudio
+    }])
+    
+    prediccion = modelo.predict(datos_entrada)[0]
+    probabilidades = modelo.predict_proba(datos_entrada)[0]
+    
+    st.subheader("📊 Diagnóstico del Modelo Predictivo")
+    if prediccion == 1:
+        prob_riesgo = probabilidades[1] * 100
+        st.error(f"⚠️ **Riesgo Alto de Deserción** (Probabilidad: {prob_riesgo:.1f}%)")
+        estado_texto = "ALTO RIESGO ACADÉMICO"
+    else:
+        prob_exito = probabilidades[0] * 100
+        st.success(f"✅ **Bajo Riesgo Académico** (Probabilidad de Éxito: {prob_exito:.1f}%)")
+        estado_texto = "BAJO RIESGO / BUEN RENDIMIENTO"
+    
+    # --- 6. Asesoría Automatizada con Groq API ---
+    st.subheader("🤖 Plan de Tutoría Automatizado (Groq API)")
+    
+    with st.spinner("Generando plan pedagógico con Groq..."):
+        prompt_sistema = "Eres un Tutor Académico universitario experto y motivador."
+        prompt_usuario = f"""Un modelo predictivo de Machine Learning evaluó a un estudiante:
+- Asistencia: {asistencia}%
+- Promedio: {promedio}
+- Horas de estudio semanales: {horas_estudio} hrs
+- Diagnóstico del Modelo: {estado_texto}
+
+Redacta un dictamen breve en Markdown:
+1. **Análisis de Indicadores:** Explica qué variables influyeron en el diagnóstico.
+2. **Plan de Acción (3 pasos):** Genera 3 acciones concretas y aplicables."""
+        
+        try:
+            # Detectar automáticamente un modelo de chat activo en tu cuenta de Groq
+            modelos_disponibles = [
+                m.id for m in client.models.list().data
+                if not any(palabra in m.id.lower() for palabra in ["whisper", "guard", "tts", "playai", "embed"])
+            ]
+
+            if not modelos_disponibles:
+                st.error("❌ No se encontraron modelos de texto disponibles en tu cuenta de Groq.")
+                st.stop()
+
+            modelo_activo = next(
+                (m for m in modelos_disponibles if "llama" in m.lower()),
+                modelos_disponibles[0]
+            )
+
+            completion = client.chat.completions.create(
+                model=modelo_activo,
+                messages=[
+                    {"role": "system", "content": prompt_sistema},
+                    {"role": "user", "content": prompt_usuario}
+                ],
+                temperature=0.7,
+                max_tokens=1024
+            )
+            
+            st.caption(f"⚡ Respuesta generada con el modelo: `{modelo_activo}`")
+            st.markdown(completion.choices[0].message.content)
+            
+        except Exception as e:
+            st.error(f"❌ Error al consultar Groq API: {e}")
+</code></pre>
+        </div>
+
+        <p>Prueba la app localmente ejecutando:</p>
+
+        <div class="code-container">
+            <div class="code-header">
+                <span>Terminal de VS Code</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copiar Código</button>
+            </div>
+            <pre><code>python -m streamlit run app.py</code></pre>
+        </div>
+    </div>
+
+    <div class="step-card">
+        <div class="step-header">
+            <div class="step-number">6</div>
+            <h2 class="step-title">Archivos de Soporte y Despliegue en la Nube</h2>
+        </div>
+        <p>Crea los archivos necesarios para desplegar en <strong>Streamlit Community Cloud</strong>:</p>
+
+        <p><strong>1. Archivo <code>requirements.txt</code>:</strong></p>
+        <div class="code-container">
+            <div class="code-header">
+                <span>requirements.txt</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copiar Código</button>
+            </div>
+            <pre><code>streamlit
+groq
+scikit-learn
+pandas
+joblib</code></pre>
+        </div>
+
+        <p><strong>2. Archivo <code>.gitignore</code>:</strong></p>
+        <div class="code-container">
+            <div class="code-header">
+                <span>.gitignore</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copiar Código</button>
+            </div>
+            <pre><code>.streamlit/secrets.toml
+__pycache__/
+*.pyc</code></pre>
+        </div>
+
+        <h3 style="margin: 20px 0 10px 0; color: var(--accent-blue);">Despliegue Público:</h3>
+        <ol>
+            <li>Subir los archivos a tu repositorio en GitHub (incluyendo <code>alumnos.csv</code> y <code>modelo_riesgo.pkl</code>).</li>
+            <li>Ingresar a <a href="https://share.streamlit.io" target="_blank" style="color: var(--accent-blue); font-weight: 700;">share.streamlit.io</a> y vincular tu repositorio.</li>
+            <li>En <em>Advanced settings &gt; Secrets</em>, configurar tu clave de Groq:
+                <br><code>GROQ_API_KEY = "gsk_TU_LLAVE_AQUI"</code>
+            </li>
+            <li>Haz clic en <strong>Deploy!</strong> para obtener tu enlace público.</li>
+        </ol>
+    </div>
+
+    <div class="step-card">
+        <div class="step-header">
+            <div class="step-number">7</div>
+            <h2 class="step-title">Cuestionario de Reflexión Pedagógica</h2>
+        </div>
+
+        <div class="quiz-item">
+            <div class="quiz-question">1. Funcionamiento del Algoritmo</div>
+            <p>¿Por qué el modelo de Machine Learning puede predecir el riesgo de un alumno sin necesidad de escribir sentencias <code>if / else</code> manuales?</p>
+        </div>
+
+        <div class="quiz-item">
+            <div class="quiz-question">2. Limpieza de Datos (<code>dropna</code>)</div>
+            <p>¿Por qué es importante ejecutar la instrucción <code>df.dropna()</code> al leer un archivo <code>.csv</code> antes de iniciar el entrenamiento del modelo?</p>
+        </div>
+
+        <div class="quiz-item">
+            <div class="quiz-question">3. Persistencia del Modelo (<code>.pkl</code>)</div>
+            <p>Una vez generado el archivo <code>modelo_riesgo.pkl</code>, ¿por qué la aplicación web no necesita volver a entrenar el modelo cada vez que un usuario presiona el botón?</p>
+        </div>
+
+        <div class="quiz-item">
+            <div class="quiz-question">4. Rol de Groq API</div>
+            <p>¿Qué función cumple el modelo predictivo de <code>scikit-learn</code> y qué función cumple la API de Groq en esta aplicación híbrida?</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function copyCode(button) {
+        const container = button.closest('.code-container');
+        const codeText = container.querySelector('pre code').innerText;
+
+        navigator.clipboard.writeText(codeText).then(() => {
+            const originalText = button.innerText;
+            button.innerText = '¡Copiado!';
+            button.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+            setTimeout(() => {
+                button.innerText = originalText;
+                button.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #3b82f6 100%)';
+            }, 2000);
+        }).catch(err => {
+            console.error('Error al copiar el código: ', err);
+        });
+    }
+
+    function toggleFullScreen() {
+        const btnText = document.getElementById('fullscreenText');
+        const btnIcon = document.getElementById('fullscreenIcon');
+
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().then(() => {
+                btnText.innerText = 'Salir de Pantalla Completa';
+                btnIcon.innerText = '🗗';
+            }).catch(err => {
+                console.error(`Error de pantalla completa: ${err.message}`);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen().then(() => {
+                    btnText.innerText = 'Pantalla Completa';
+                    btnIcon.innerText = '⛶';
+                });
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
