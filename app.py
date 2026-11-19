@@ -73,30 +73,60 @@ Redacta un dictamen breve en Markdown:
 2. **Plan de Acción (3 pasos):** Genera 3 acciones concretas y aplicables."""
 
         try:
-            # Detectar automáticamente un modelo de chat activo en tu cuenta de Groq
-            modelos_disponibles = [
-                m.id for m in client.models.list().data
-                if not any(palabra in m.id.lower() for palabra in ["whisper", "guard", "tts", "playai", "embed"])
+            # Detectar automáticamente un modelo de CHAT activo en tu cuenta de Groq
+            MODELOS_PREFERIDOS = [
+                "llama-3.3-70b-versatile",
+                "llama-3.1-8b-instant",
+                "openai/gpt-oss-120b",
+                "openai/gpt-oss-20b",
+            ]
+            # Excluir modelos que no son de chat (audio, TTS, moderación, embeddings, etc.)
+            PALABRAS_NO_CHAT = [
+                "whisper", "tts", "orpheus", "guard", "playai",
+                "embed", "moderation", "rerank", "speech",
             ]
 
-            if not modelos_disponibles:
+            todos = [m.id for m in client.models.list().data]
+            modelos_chat = [
+                m for m in todos
+                if not any(palabra in m.lower() for palabra in PALABRAS_NO_CHAT)
+            ]
+
+            if not modelos_chat:
                 st.error("❌ No se encontraron modelos de texto disponibles en tu cuenta de Groq.")
                 st.stop()
 
-            modelo_activo = next(
-                (m for m in modelos_disponibles if "llama" in m.lower()),
-                modelos_disponibles[0]
+            modelo_activo = (
+                next((m for m in MODELOS_PREFERIDOS if m in modelos_chat), None)
+                or next((m for m in modelos_chat if "llama" in m.lower()), None)
+                or next((m for m in modelos_chat if "gpt-oss" in m.lower()), None)
+                or modelos_chat[0]
             )
 
-            completion = client.chat.completions.create(
-                model=modelo_activo,
-                messages=[
-                    {"role": "system", "content": prompt_sistema},
-                    {"role": "user", "content": prompt_usuario}
-                ],
-                temperature=0.7,
-                max_tokens=1024
-            )
+            completion = None
+            errores = []
+            candidatos = [modelo_activo] + [m for m in modelos_chat if m != modelo_activo]
+            for candidato in candidatos[:4]:
+                try:
+                    completion = client.chat.completions.create(
+                        model=candidato,
+                        messages=[
+                            {"role": "system", "content": prompt_sistema},
+                            {"role": "user", "content": prompt_usuario}
+                        ],
+                        temperature=0.7,
+                        max_tokens=1024
+                    )
+                    modelo_activo = candidato
+                    break
+                except Exception as e:
+                    errores.append(f"{candidato}: {e}")
+
+            if completion is None:
+                st.error("❌ No fue posible generar la tutoría con ningún modelo disponible.")
+                with st.expander("Ver detalle de los errores"):
+                    st.code("\n".join(errores))
+                st.stop()
 
             st.caption(f"⚡ Respuesta generada con el modelo: `{modelo_activo}`")
             st.markdown(completion.choices[0].message.content)
